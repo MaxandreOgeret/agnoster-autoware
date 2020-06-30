@@ -216,12 +216,15 @@ prompt_virtualenv() {
 }
 
 # Status:
+# - Is it overheating
 # - was there an error
 # - am I root
 # - are there background jobs?
 prompt_status() {
   local -a symbols
 
+  # For Dell XPS 15 laptop
+  [[ `command -v sensors` && `sensors | grep 'Package id 0'` && `sensors | grep -oP '(?<=Package id 0:  \+).*?(?=°C  )'` > 80 ]] && symbols+="%{%F{red}%}🌡 "
   [[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}✘"
   [[ $UID -eq 0 ]] && symbols+="%{%F{yellow}%}⚡"
   [[ $(jobs -l | wc -l) -gt 0 ]] && symbols+="%{%F{cyan}%}⚙"
@@ -244,9 +247,14 @@ prompt_aws() {
 
 prompt_autoware() {
   if [[ $ROS_PACKAGE_PATH != *"autoware"* ]] && return
-  AUTOWARE_STRING=`rospack find gpsins_localizer | grep -oP '(?<=autoware\.).+?(?=\/)'`
+  AUTOWARE_STRING=`rospack find op_planner | grep -oP '(?<=autoware\.).+?(?=\/)'`
   if [[ -z "${AUTOWARE_STRING// }" ]] && return
   prompt_segment cyan $CURRENT_FG $AUTOWARE_STRING
+}
+
+prompt_car() {
+  if [[ $ROS_MASTER_URI != *"192.168.100.100"* ]] && return
+  prompt_segment green $CURRENT_FG 🚙
 }
 
 ## Main prompt
@@ -257,6 +265,7 @@ build_prompt() {
   prompt_aws
   prompt_context
   prompt_autoware
+  prompt_car
   prompt_dir
   prompt_git
   prompt_bzr
